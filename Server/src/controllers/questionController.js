@@ -160,25 +160,35 @@ const createQuestion = async (req, res) => {
 
     const { title, description, tags } = value;
 
-    // Verify all tags exist
-    const existingTags = await Tag.find({ _id: { $in: tags } });
-    if (existingTags.length !== tags.length) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json(
-        createResponse(false, 'One or more tags do not exist')
-      );
+    // Process tags - convert tag names to ObjectIds, create if they don't exist
+    const tagIds = [];
+    for (const tagName of tags) {
+      let tag = await Tag.findOne({ name: { $regex: new RegExp(`^${tagName}$`, 'i') } });
+      
+      if (!tag) {
+        // Create new tag if it doesn't exist
+        tag = await Tag.create({
+          name: tagName.toLowerCase(),
+          description: `Questions related to ${tagName}`,
+          createdBy: req.user._id,
+          isApproved: true // Auto-approve for now, you can change this later
+        });
+      }
+      
+      tagIds.push(tag._id);
     }
 
     // Create question
     const question = await Question.create({
       title,
       description,
-      tags,
+      tags: tagIds,
       author: req.user._id
     });
 
     // Update tag usage counts
     await Tag.updateMany(
-      { _id: { $in: tags } },
+      { _id: { $in: tagIds } },
       { $inc: { usageCount: 1 } }
     );
 

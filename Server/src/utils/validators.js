@@ -89,7 +89,7 @@ const createQuestionSchema = Joi.object({
     }),
   
   tags: Joi.array()
-    .items(Joi.string().length(24)) // MongoDB ObjectId length
+    .items(Joi.string().min(2).max(25)) // Accept tag names instead of ObjectIds
     .min(VALIDATION_LIMITS.TAGS_PER_QUESTION.MIN)
     .max(VALIDATION_LIMITS.TAGS_PER_QUESTION.MAX)
     .required()
