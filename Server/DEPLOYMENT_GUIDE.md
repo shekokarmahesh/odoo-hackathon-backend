@@ -38,7 +38,7 @@ RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 
 # Frontend URL
-FRONTEND_URL=https://your-frontend-domain.com
+FRONTEND_URL=https://odoo-hackathon-frontend.onrender.com
 
 # Email Notifications
 EMAIL_NOTIFICATIONS_ENABLED=true

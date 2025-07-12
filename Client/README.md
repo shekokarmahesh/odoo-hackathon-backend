@@ -55,7 +55,39 @@ A modern React + Vite frontend for the StackIt Q&A forum platform.
 
 ## 🔗 API Integration
 
-The frontend is designed to work with the StackIt backend API. Make sure your backend server is running on `http://localhost:5000`.
+The frontend is configured to work with the StackIt backend API hosted at:
+- **Production**: `https://odoo-hackathon-backend.onrender.com`
+- **Development**: `http://localhost:5000` (when running locally)
+
+### Environment Configuration
+
+The API URL is configured via environment variables:
+
+- **`.env`** - Currently set to production backend
+- **`.env.local.example`** - Template for local development
+- **`.env.production`** - Production environment settings
+
+To switch to local development:
+1. Copy `.env.local.example` to `.env.local`
+2. The local settings will override the main `.env` file
+
+## 🚀 Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+
+### Deploy to Vercel
+1. Connect your GitHub repository to Vercel
+2. Vercel will auto-detect the React app
+3. Environment variables are automatically loaded from `.env.production`
+
+### Deploy to Netlify
+1. Connect your GitHub repository to Netlify
+2. Set build command: `npm run build`
+3. Set publish directory: `dist`
+4. Environment variables are loaded from `.env.production`
 
 ## 📱 Responsive Design
 

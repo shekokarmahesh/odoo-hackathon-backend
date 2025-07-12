@@ -45,6 +45,7 @@ const corsOptions = {
     
     const allowedOrigins = [
       process.env.FRONTEND_URL,
+      'https://odoo-hackathon-frontend.onrender.com',
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:5173',
