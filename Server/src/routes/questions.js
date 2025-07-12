@@ -12,72 +12,67 @@ const { createQuestionSchema, updateQuestionSchema } = require('../utils/validat
 // Import question controller
 const questionController = require('../controllers/questionController');
 
-// Placeholder endpoints - to be implemented
+// Endpoints
 router.get('/',
   optionalAuth,
   validatePagination,
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Questions endpoint - implementation pending',
-      endpoint: 'GET /api/questions',
-      description: 'Get all questions with filters, pagination, and search'
-    });
-  }
+  questionController.getQuestions
+);
+
+router.get('/search',
+  optionalAuth,
+  validatePagination,
+  questionController.searchQuestions
+);
+
+router.get('/trending',
+  optionalAuth,
+  validatePagination,
+  questionController.getTrendingQuestions
+);
+
+router.get('/unanswered',
+  optionalAuth,
+  validatePagination,
+  questionController.getUnansweredQuestions
 );
 
 router.get('/:id',
   validateObjectId(),
   optionalAuth,
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Single question endpoint - implementation pending',
-      endpoint: 'GET /api/questions/:id',
-      description: 'Get single question with answers and comments'
-    });
-  }
+  questionController.getQuestionById
 );
 
 router.post('/',
   auth,
   questionLimiter,
   validate(createQuestionSchema),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Create question endpoint - implementation pending',
-      endpoint: 'POST /api/questions',
-      description: 'Create new question'
-    });
-  }
+  questionController.createQuestion
 );
 
 router.put('/:id',
   validateObjectId(),
   auth,
   validate(updateQuestionSchema),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Update question endpoint - implementation pending',
-      endpoint: 'PUT /api/questions/:id',
-      description: 'Update question (author only)'
-    });
-  }
+  questionController.updateQuestion
 );
 
 router.delete('/:id',
   validateObjectId(),
   auth,
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Delete question endpoint - implementation pending',
-      endpoint: 'DELETE /api/questions/:id',
-      description: 'Delete question (author/admin only)'
-    });
-  }
+  questionController.deleteQuestion
+);
+
+router.put('/:id/close',
+  validateObjectId(),
+  auth,
+  questionController.closeQuestion
+);
+
+router.put('/:id/reopen',
+  validateObjectId(),
+  auth,
+  questionController.reopenQuestion
 );
 
 module.exports = router;

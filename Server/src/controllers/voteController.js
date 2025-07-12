@@ -264,9 +264,198 @@ const removeVote = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Vote on a question
+ * @route   POST /api/votes/question/:id
+ * @access  Private
+ */
+const voteOnQuestion = async (req, res) => {
+  try {
+    const { voteType } = req.body;
+    
+    if (!['upvote', 'downvote'].includes(voteType)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json(
+        createResponse(false, 'Vote type must be upvote or downvote')
+      );
+    }
+
+    // Use the existing castVote logic
+    req.body = {
+      target: req.params.id,
+      targetType: 'question',
+      voteType
+    };
+
+    return castVote(req, res);
+  } catch (error) {
+    console.error('Vote on question error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to vote on question')
+    );
+  }
+};
+
+/**
+ * @desc    Vote on an answer
+ * @route   POST /api/votes/answer/:id
+ * @access  Private
+ */
+const voteOnAnswer = async (req, res) => {
+  try {
+    const { voteType } = req.body;
+    
+    if (!['upvote', 'downvote'].includes(voteType)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json(
+        createResponse(false, 'Vote type must be upvote or downvote')
+      );
+    }
+
+    // Use the existing castVote logic
+    req.body = {
+      target: req.params.id,
+      targetType: 'answer',
+      voteType
+    };
+
+    return castVote(req, res);
+  } catch (error) {
+    console.error('Vote on answer error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to vote on answer')
+    );
+  }
+};
+
+/**
+ * @desc    Get question votes
+ * @route   GET /api/votes/question/:id
+ * @access  Public
+ */
+const getQuestionVotes = async (req, res) => {
+  try {
+    req.query = {
+      target: req.params.id,
+      targetType: 'question'
+    };
+
+    return getVoteStats(req, res);
+  } catch (error) {
+    console.error('Get question votes error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to get question votes')
+    );
+  }
+};
+
+/**
+ * @desc    Get answer votes
+ * @route   GET /api/votes/answer/:id
+ * @access  Public
+ */
+const getAnswerVotes = async (req, res) => {
+  try {
+    req.query = {
+      target: req.params.id,
+      targetType: 'answer'
+    };
+
+    return getVoteStats(req, res);
+  } catch (error) {
+    console.error('Get answer votes error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to get answer votes')
+    );
+  }
+};
+
+/**
+ * @desc    Get user votes with pagination
+ * @route   GET /api/votes/user/:userId
+ * @access  Public
+ */
+const getUserVotes = async (req, res) => {
+  try {
+    const { getPaginationParams, createPaginationMeta } = require('../utils/helpers');
+    const { page, limit, skip } = getPaginationParams(req.query);
+
+    const votes = await Vote.find({ voter: req.params.userId })
+      .populate('target')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Vote.countDocuments({ voter: req.params.userId });
+    const meta = createPaginationMeta(total, page, limit);
+
+    res.status(HTTP_STATUS.OK).json(
+      createResponse(true, 'User votes retrieved successfully', votes, meta)
+    );
+  } catch (error) {
+    console.error('Get user votes error:', error);
+    if (error.name === 'CastError') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json(
+        createResponse(false, 'Invalid user ID')
+      );
+    }
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to get user votes')
+    );
+  }
+};
+
+/**
+ * @desc    Remove vote from question
+ * @route   DELETE /api/votes/question/:id
+ * @access  Private
+ */
+const removeQuestionVote = async (req, res) => {
+  try {
+    req.body = {
+      target: req.params.id,
+      targetType: 'question'
+    };
+
+    return removeVote(req, res);
+  } catch (error) {
+    console.error('Remove question vote error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to remove question vote')
+    );
+  }
+};
+
+/**
+ * @desc    Remove vote from answer
+ * @route   DELETE /api/votes/answer/:id
+ * @access  Private
+ */
+const removeAnswerVote = async (req, res) => {
+  try {
+    req.body = {
+      target: req.params.id,
+      targetType: 'answer'
+    };
+
+    return removeVote(req, res);
+  } catch (error) {
+    console.error('Remove answer vote error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to remove answer vote')
+    );
+  }
+};
+
 module.exports = {
   castVote,
   getVoteStats,
   getUserVote,
-  removeVote
+  removeVote,
+  voteOnQuestion,
+  voteOnAnswer,
+  getQuestionVotes,
+  getAnswerVotes,
+  getUserVotes,
+  removeQuestionVote,
+  removeAnswerVote
 };

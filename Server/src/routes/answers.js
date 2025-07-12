@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Import middleware
 const { auth } = require('../middleware/auth');
-const { validate, validateObjectId } = require('../middleware/validation');
+const { validate, validateObjectId, validatePagination } = require('../middleware/validation');
 const { answerLimiter } = require('../middleware/rateLimiter');
 
 // Import validation schemas
@@ -12,17 +12,16 @@ const { createAnswerSchema, updateAnswerSchema } = require('../utils/validators'
 // Import answer controller
 const answerController = require('../controllers/answerController');
 
-// Placeholder endpoints - to be implemented
+// Endpoints
 router.get('/question/:questionId',
   validateObjectId('questionId'),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Get question answers endpoint - implementation pending',
-      endpoint: 'GET /api/answers/question/:questionId',
-      description: 'Get all answers for a specific question'
-    });
-  }
+  validatePagination,
+  answerController.getAnswersByQuestion
+);
+
+router.get('/:id',
+  validateObjectId(),
+  answerController.getAnswerById
 );
 
 router.post('/question/:questionId',
@@ -30,54 +29,32 @@ router.post('/question/:questionId',
   auth,
   answerLimiter,
   validate(createAnswerSchema),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Create answer endpoint - implementation pending',
-      endpoint: 'POST /api/answers/question/:questionId',
-      description: 'Create new answer for a question'
-    });
-  }
+  answerController.createAnswer
 );
 
 router.put('/:id',
   validateObjectId(),
   auth,
   validate(updateAnswerSchema),
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Update answer endpoint - implementation pending',
-      endpoint: 'PUT /api/answers/:id',
-      description: 'Update answer (author only)'
-    });
-  }
+  answerController.updateAnswer
 );
 
 router.delete('/:id',
   validateObjectId(),
   auth,
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Delete answer endpoint - implementation pending',
-      endpoint: 'DELETE /api/answers/:id',
-      description: 'Delete answer (author/admin only)'
-    });
-  }
+  answerController.deleteAnswer
 );
 
 router.put('/:id/accept',
   validateObjectId(),
   auth,
-  (req, res) => {
-    res.json({
-      success: true,
-      message: 'Accept answer endpoint - implementation pending',
-      endpoint: 'PUT /api/answers/:id/accept',
-      description: 'Accept answer (question author only)'
-    });
-  }
+  answerController.acceptAnswer
+);
+
+router.put('/:id/unaccept',
+  validateObjectId(),
+  auth,
+  answerController.unacceptAnswer
 );
 
 module.exports = router;

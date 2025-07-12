@@ -279,11 +279,134 @@ const getTopUsers = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Search users by username or name
+ * @route   GET /api/users/search
+ * @access  Public
+ */
+const searchUsers = async (req, res) => {
+  try {
+    const { page, limit, skip } = getPaginationParams(req.query);
+    const { q: query } = req.query;
+
+    if (!query || query.trim().length === 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json(
+        createResponse(false, 'Search query is required')
+      );
+    }
+
+    const searchRegex = new RegExp(query.trim(), 'i');
+
+    // Search users by username, firstName, or lastName
+    const users = await User.find({
+      isActive: true,
+      $or: [
+        { username: searchRegex },
+        { 'profile.firstName': searchRegex },
+        { 'profile.lastName': searchRegex }
+      ]
+    })
+      .select('username profile.firstName profile.lastName profile.avatar reputation createdAt')
+      .sort({ reputation: -1, username: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Get total count
+    const total = await User.countDocuments({
+      isActive: true,
+      $or: [
+        { username: searchRegex },
+        { 'profile.firstName': searchRegex },
+        { 'profile.lastName': searchRegex }
+      ]
+    });
+
+    // Create pagination metadata
+    const meta = createPaginationMeta(total, page, limit);
+
+    res.status(HTTP_STATUS.OK).json(
+      createResponse(true, 'User search completed', users, meta)
+    );
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to search users')
+    );
+  }
+};
+
+/**
+ * @desc    Get user activity (questions, answers, votes)
+ * @route   GET /api/users/:id/activity
+ * @access  Public
+ */
+const getUserActivity = async (req, res) => {
+  try {
+    const { page, limit, skip } = getPaginationParams(req.query);
+
+    // Verify user exists
+    const user = await User.findById(req.params.id);
+    if (!user || !user.isActive) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json(
+        createResponse(false, 'User not found')
+      );
+    }
+
+    // Get recent questions
+    const recentQuestions = await Question.find({
+      author: req.params.id,
+      status: { $ne: 'deleted' }
+    })
+      .select('title createdAt voteScore answersCount')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    // Get recent answers
+    const recentAnswers = await Answer.find({
+      author: req.params.id,
+      isDeleted: false
+    })
+      .populate('question', 'title _id')
+      .select('content createdAt voteScore isAccepted question')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    // Combine and sort activity
+    const activity = [
+      ...recentQuestions.map(q => ({ ...q, type: 'question' })),
+      ...recentAnswers.map(a => ({ ...a, type: 'answer' }))
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+     .slice(skip, skip + limit);
+
+    const total = recentQuestions.length + recentAnswers.length;
+    const meta = createPaginationMeta(total, page, limit);
+
+    res.status(HTTP_STATUS.OK).json(
+      createResponse(true, 'User activity retrieved successfully', activity, meta)
+    );
+  } catch (error) {
+    console.error('Get user activity error:', error);
+    if (error.name === 'CastError') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json(
+        createResponse(false, 'Invalid user ID')
+      );
+    }
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+      createResponse(false, 'Failed to retrieve user activity')
+    );
+  }
+};
+
 module.exports = {
   getUserProfile,
   updateProfile,
   getUserQuestions,
   getUserAnswers,
   getCurrentUser,
-  getTopUsers
+  getTopUsers,
+  searchUsers,
+  getUserActivity
 };
