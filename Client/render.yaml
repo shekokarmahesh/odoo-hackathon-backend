@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: stackit-frontend
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        value: https://odoo-hackathon-backend.onrender.com/api
+      - key: VITE_SOCKET_URL
+        value: https://odoo-hackathon-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
